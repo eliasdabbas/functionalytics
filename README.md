@@ -1,15 +1,17 @@
 # `functionalytics`: Effortless Analytics for Your Python Functions
 
-functionalytics helps you understand how your users interact with your application, without extra code or complex analytics tools. Just add a decorator to your functions, and instantly log every call, argument, and key attribute for later analysis.
+functionalytics helps you understand how your users interact with your application, without extra code or complex analytics tools. Just add a decorator to your functions, and log every call, argument, and key attribute for later analysis.
 
 ## Why use functionalytics?
 
 - Know your users: See which options, features, or inputs are most popular in your app.
-- No hassle: Add a single decorator—no need to rewrite your functions or add tracking code everywhere.
+- No hassle: Add a single decorator, no need to rewrite your functions or add tracking code everywhere.
 - Stay in control: Choose what gets logged, redact sensitive data, and summarize large inputs.
 - Analyze easily: Logs are structured for easy parsing and analysis.
 
-- `functionalytics`: rhymes with "functionality"
+## The name
+
+- `functionalytics`: Rhymes with "functionality"
 - Function analytics: Run analytics for your function calls in your apps
 - Functional: Use functional programming to implement this through a simple decorator
 
@@ -20,6 +22,7 @@ You have an interactive app, and you want to know how many people use which opti
 - In a country dropdown, which are the most popular countries?
 - How many people enable the "color" checkbox when they create a chart?
 - Are people even using the slider we worked so hard to implement?
+- Are there any performance difference between the different options selected?
 
 These are some example questions that this package aims to help answer
 
@@ -29,7 +32,7 @@ These are some example questions that this package aims to help answer
 python3 -m pip install functionalytics
 ```
 
-## The approach: function decorator + logging
+## The approach: function decorator + logging (automated)
 
 ```python
 from functionalytics import log_this
