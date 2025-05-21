@@ -1,0 +1,14 @@
+[project]
+name = "functionalytics"
+version = "0.2.0"
+description = "Function(ality) analytics for your apps."
+readme = "README.md"
+authors = [
+    { name = "Elias Dabbas", email = "eliasdabbas@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
