@@ -1,0 +1,69 @@
+# `functionalytics`: Effortless Analytics for Your Python Functions
+
+functionalytics helps you understand how your users interact with your application, without extra code or complex analytics tools. Just add a decorator to your functions, and instantly log every call, argument, and key attribute for later analysis.
+
+## Why use functionalytics?
+
+- Know your users: See which options, features, or inputs are most popular in your app.
+- No hassle: Add a single decorator—no need to rewrite your functions or add tracking code everywhere.
+- Stay in control: Choose what gets logged, redact sensitive data, and summarize large inputs.
+- Analyze easily: Logs are structured for easy parsing and analysis.
+
+- `functionalytics`: rhymes with "functionality"
+- Function analytics: Run analytics for your function calls in your apps
+- Functional: Use functional programming to implement this through a simple decorator
+
+## The idea
+
+You have an interactive app, and you want to know how many people use which option:
+
+- In a country dropdown, which are the most popular countries?
+- How many people enable the "color" checkbox when they create a chart?
+- Are people even using the slider we worked so hard to implement?
+
+These are some example questions that this package aims to help answer
+
+## Installation
+
+```bash
+python3 -m pip install functionalytics
+```
+
+## The approach: function decorator + logging
+
+```python
+from functionalytics import log_this
+
+@log_this()
+def add(a, b):
+    return a + b
+
+add(10, 20)
+Calling: __main__.add [2025-05-20T06:15:54.452792+00:00  2025-05-20T06:15:54.453116+00:00] Args: [10, 20] Kwargs: {} Attrs: {}
+30
+```
+
+Every time the `add` function gets called, the given arguments are logged so you can later analyze the user behavior.
+
+### You also get:
+
+- Start/end time, which helps audit how fast/slow that particular function is, and if certain inputs cause it to slow down.
+- Module name: Where the function is being called from.
+- Args, Kwargs: Dependig on how they are called, all arguments get logged.
+- Attrs: In some cases you don't want to log the actual arguments. They might be uploaded images, CSV files, extremely long strings, or anything that would unnecessarily clutter your log files. In such cases, you can only log certain attribtes of those inputs. For example image size, CSV file dimensions, or string lengths, respectively.
+
+## Installation
+
+```bash
+python3 -m pip install functionalytics
+```
+
+## Function parameters
+
+`log_level`: The level of logging required to trigger a logging event.
+`file_path`: The path of the file where you want to write and store the logs.  
+`log_format`: In case you want to have a different format.  
+`param_attrs`: A dictionary with keys being parameter names, and values being a transformer function for each. For example, if you have a string user input that you only want to log its length, you can supply something like this: `{"user_input": len}`.
+`discard_params`: Typically, when you have certain inputs that might clutter log files (or might be private), and that you want to log certain attributes, you will also need to discard those inputs from being logged. This is the option for doing so.
+
+
