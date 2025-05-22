@@ -163,3 +163,54 @@ def test_python310_utc(monkeypatch, caplog):
     with caplog.at_level(logging.INFO):
         foo(1)
     assert "Calling: " in caplog.text
+
+
+def test_extra_data_logging(caplog):
+    @log_this(extra_data={'key1': 'val1', 'key2': 123})
+    def add(a, b):
+        return a + b
+
+    with caplog.at_level(logging.INFO):
+        add(1, 2)
+    assert "Extra: {'key1': 'val1', 'key2': 123}" in caplog.text
+
+
+def test_extra_data_empty_or_none(caplog):
+    @log_this(extra_data={})
+    def func_empty_extra(a):
+        return a
+
+    with caplog.at_level(logging.INFO):
+        func_empty_extra(1)
+    assert "Extra:" not in caplog.text
+
+    @log_this(extra_data=None)
+    def func_none_extra(a):
+        return a
+
+    with caplog.at_level(logging.INFO):
+        func_none_extra(1)
+    assert "Extra:" not in caplog.text
+
+    @log_this()
+    def func_default_extra(a):
+        return a
+
+    with caplog.at_level(logging.INFO):
+        func_default_extra(1)
+    assert "Extra:" not in caplog.text
+
+
+def test_extra_data_with_other_params(caplog):
+    @log_this(param_attrs={'a': str}, discard_params={'b'}, extra_data={'user': 'test'})
+    def func(a, b):
+        return a, b
+
+    with caplog.at_level(logging.INFO):
+        func(10, 'secret')
+
+    assert "Attrs: {'a': '10'}" in caplog.text
+    assert "'secret'" not in caplog.text  # Checking if 'secret' value is logged
+    assert "Args: [10]" in caplog.text # Make sure 'b' is not in Args
+    assert "Kwargs: {}" in caplog.text # Make sure 'b' is not in Kwargs
+    assert "Extra: {'user': 'test'}" in caplog.text

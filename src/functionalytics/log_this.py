@@ -11,6 +11,7 @@ def log_this(
     log_format: Optional[str] = None,
     param_attrs: Optional[Mapping[str, Callable[[Any], Any]]] = None,
     discard_params: Optional[Iterable[str]] = None,
+    extra_data: Optional[Mapping[str, Any]] = None,
 ):
     """Flexibly log every invocation of your application's functions.
 
@@ -36,6 +37,9 @@ def log_this(
         Iterable of parameter names whose *values* **must not appear in the
         Args/Kwargs sections** of the log line. These parameters are still
         eligible for inclusion in *Attrs* via *param_attrs*.
+    extra_data
+        Optional dictionary of arbitrary data to be appended to the log
+        line. Appears as ``Extra: {key1: val1, ...}``.
 
     Examples
     --------
@@ -122,12 +126,16 @@ def log_this(
             result = func(*args, **kwargs)
             t1 = datetime.datetime.now(utc)
 
+            extra_data_repr = ""
+            if extra_data:
+                extra_data_repr = f" Extra: {extra_data}"
+
             logger.log(
                 log_level,
                 (
                     f"Calling: {logger_name} "
                     f"[{t0.isoformat()}  {t1.isoformat()}] "
-                    f"Args: {args_repr} Kwargs: {kwargs_repr} Attrs: {attrs_repr}"
+                    f"Args: {args_repr} Kwargs: {kwargs_repr} Attrs: {attrs_repr}{extra_data_repr}"
                 ),
             )
             return result
