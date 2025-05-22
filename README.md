@@ -1,5 +1,7 @@
 # `functionalytics`: Effortless Analytics for Your Python Functions
 
+> ⚠️ This package is still under heavy development. Expect changes, and feel free to submit suggestions.
+
 functionalytics helps you understand how your users interact with your application, without extra code or complex analytics tools. Just add a decorator to your functions, and log every call, argument, and key attribute for later analysis.
 
 ## Why use functionalytics?
