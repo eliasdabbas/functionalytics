@@ -68,5 +68,6 @@ python3 -m pip install functionalytics
 `log_format`: In case you want to have a different format.  
 `param_attrs`: A dictionary with keys being parameter names, and values being a transformer function for each. For example, if you have a string user input that you only want to log its length, you can supply something like this: `{"user_input": len}`.
 `discard_params`: Typically, when you have certain inputs that might clutter log files (or might be private), and that you want to log certain attributes, you will also need to discard those inputs from being logged. This is the option for doing so.
+`extra_data`: Allows for logging arbitrary additional data. This should be a dictionary where keys are strings (descriptions of the data) and values are the actual data to be logged. This gives developers the flexibility to include any custom information relevant to their needs.
 
 
