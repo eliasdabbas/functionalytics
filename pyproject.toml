@@ -7,6 +7,10 @@ authors = [
     { name = "Elias Dabbas", email = "eliasdabbas@gmail.com" }
 ]
 requires-python = ">=3.10"
+
+[project.urls]
+homepage = "https://github.com/eliasdabbas/functionalytics"
+
 dependencies = []
 
 [build-system]
