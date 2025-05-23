@@ -1,7 +1,5 @@
 import logging
 import re
-import tempfile
-from pathlib import Path
 
 import pytest
 from functionalytics.log_this import log_this
@@ -166,7 +164,7 @@ def test_python310_utc(monkeypatch, caplog):
 
 
 def test_extra_data_logging(caplog):
-    @log_this(extra_data={'key1': 'val1', 'key2': 123})
+    @log_this(extra_data={"key1": "val1", "key2": 123})
     def add(a, b):
         return a + b
 
@@ -202,15 +200,44 @@ def test_extra_data_empty_or_none(caplog):
 
 
 def test_extra_data_with_other_params(caplog):
-    @log_this(param_attrs={'a': str}, discard_params={'b'}, extra_data={'user': 'test'})
+    @log_this(param_attrs={"a": str}, discard_params={"b"}, extra_data={"user": "test"})
     def func(a, b):
         return a, b
 
     with caplog.at_level(logging.INFO):
-        func(10, 'secret')
+        func(10, "secret")
 
     assert "Attrs: {'a': '10'}" in caplog.text
     assert "'secret'" not in caplog.text  # Checking if 'secret' value is logged
-    assert "Args: [10]" in caplog.text # Make sure 'b' is not in Args
-    assert "Kwargs: {}" in caplog.text # Make sure 'b' is not in Kwargs
+    assert "Args: [10]" in caplog.text  # Make sure 'b' is not in Args
+    assert "Kwargs: {}" in caplog.text  # Make sure 'b' is not in Kwargs
     assert "Extra: {'user': 'test'}" in caplog.text
+
+
+def test_error_logging_to_file(tmp_path):
+    log_file = tmp_path / "test.log"
+    error_file = tmp_path / "error.log"
+
+    @log_this(file_path=str(log_file), error_file_path=str(error_file))
+    def fail_func(x):
+        raise ValueError(f"fail: {x}")
+
+    # The function should raise, and error should be logged to error_file
+    with pytest.raises(ValueError):
+        fail_func(123)
+    error_content = read_log_file(error_file)
+    assert "Error in" in error_content
+    assert "fail: 123" in error_content
+    assert "Exception:" in error_content
+
+
+def test_error_logging_to_stderr(caplog):
+    @log_this()
+    def fail_func(x):
+        raise RuntimeError(f"bad: {x}")
+
+    with pytest.raises(RuntimeError):
+        fail_func("oops")
+    assert "Error in" in caplog.text
+    assert "bad: oops" in caplog.text
+    assert "Exception:" in caplog.text
