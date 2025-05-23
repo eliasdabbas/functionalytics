@@ -1,6 +1,7 @@
 import datetime
 import inspect
 import logging
+import traceback
 from functools import wraps
 from typing import Any, Callable, Iterable, Mapping, Optional
 
@@ -12,6 +13,7 @@ def log_this(
     param_attrs: Optional[Mapping[str, Callable[[Any], Any]]] = None,
     discard_params: Optional[Iterable[str]] = None,
     extra_data: Optional[Mapping[str, Any]] = None,
+    error_file_path: Optional[str] = None,
 ):
     """Flexibly log every invocation of your application's functions.
 
@@ -40,6 +42,8 @@ def log_this(
     extra_data
         Optional dictionary of arbitrary data to be appended to the log
         line. Appears as ``Extra: {key1: val1, ...}``.
+    error_file_path
+        Path to a log file for errors. If *None*, error output goes to *stderr*.
 
     Examples
     --------
@@ -81,6 +85,11 @@ def log_this(
     if log_format:
         handler.setFormatter(logging.Formatter(log_format, style="{"))
 
+    if error_file_path:
+        error_handler = logging.FileHandler(error_file_path)
+    else:
+        error_handler = logging.StreamHandler()
+
     discard_set = set(discard_params or ())
 
     def decorator(func):
@@ -92,6 +101,12 @@ def log_this(
             logger.addHandler(handler)
 
         sig = inspect.signature(func)
+
+        error_logger_name = f"{func.__module__}.{func.__qualname__}.error"
+        error_logger = logging.getLogger(error_logger_name)
+        error_logger.setLevel(logging.ERROR)
+        if error_handler not in error_logger.handlers:
+            error_logger.addHandler(error_handler)
 
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -123,7 +138,13 @@ def log_this(
                 utc = datetime.timezone.utc
 
             t0 = datetime.datetime.now(utc)
-            result = func(*args, **kwargs)
+            try:
+                result = func(*args, **kwargs)
+            except Exception as exc:
+                error_logger.error(
+                    f"Error in {logger_name} at {t0.isoformat()} Args: {args_repr} Kwargs: {kwargs_repr} Attrs: {attrs_repr} Exception: {exc}\n{traceback.format_exc()}"
+                )
+                raise
             t1 = datetime.datetime.now(utc)
 
             extra_data_repr = ""
