@@ -6,13 +6,23 @@ readme = "README.md"
 authors = [
     { name = "Elias Dabbas", email = "eliasdabbas@gmail.com" }
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.8"
 
 [project.urls]
 homepage = "https://github.com/eliasdabbas/functionalytics"
 
-dependencies = []
+[project.optional-dependencies]
+dev = [
+    "tox-uv",
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "mypy",
+]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.coverage.run]
+omit = ["*/tests/*", "*/__pycache__/*"]
