@@ -84,7 +84,7 @@ def log_this(
 
     if log_format:
         handler.setFormatter(logging.Formatter(log_format, style="{"))
-
+    error_handler: logging.Handler
     if error_file_path:
         error_handler = logging.FileHandler(error_file_path)
     else:
