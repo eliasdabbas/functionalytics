@@ -226,16 +226,17 @@ def test_error_logging_to_file(tmp_path):
     assert "Exception:" in error_content
 
 
-def test_error_logging_to_stderr(caplog):
+def test_error_logging_to_stderr(capsys):
     @log_this()
     def fail_func(x):
         raise RuntimeError(f"bad: {x}")
 
     with pytest.raises(RuntimeError):
         fail_func("oops")
-    assert "Error in" in caplog.text
-    assert "bad: oops" in caplog.text
-    assert "Exception:" in caplog.text
+    captured = capsys.readouterr()
+    assert "Error in" in captured.err
+    assert "bad: oops" in captured.err
+    assert "Exception:" in captured.err
 
 
 # Tests for log_conditions
@@ -395,12 +396,11 @@ def test_log_conditions_not_met_with_other_features_no_log(caplog):
 def test_param_attrs_invalid_parameter():
     """Test that param_attrs raises KeyError for invalid parameter names."""
 
-    @log_this(param_attrs={"nonexistent": str})
+    @log_this(param_attrs={"non_existent": lambda x: x})
     def func(a):
         return a
 
-    with pytest.raises(KeyError) as exc_info:
+    with pytest.raises(KeyError) as excinfo:
         func(1)
-
-    assert "Parameter 'nonexistent' referenced in param_attrs" in str(exc_info.value)
-    assert "is not a valid parameter for function 'func'" in str(exc_info.value)
+    assert "Parameter 'non_existent' referenced in param_attrs" in str(excinfo.value)
+    assert "is not a valid parameter for function 'func'" in str(excinfo.value)
