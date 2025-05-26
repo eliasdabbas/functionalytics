@@ -27,8 +27,7 @@ def test_basic_logging_to_stderr(caplog):
         result = add(1, 2)
     assert result == 3
     assert any("Calling: " in record for record in caplog.text.splitlines())
-    assert "Args: [1, 2]" in caplog.text
-    assert "Kwargs: {}" in caplog.text
+    assert "Values: a=1 b=2" in caplog.text
     assert "Attrs: {}" in caplog.text
 
 
@@ -42,7 +41,7 @@ def test_logging_to_file(tmp_path):
     mul(2, 5)
     log_content = read_log_file(log_file)
     assert "Calling: " in log_content
-    assert "Args: [2, 5]" in log_content
+    assert "Values: a=2 b=5" in log_content
 
 
 def test_log_format(tmp_path):
@@ -65,9 +64,8 @@ def test_discard_params(caplog):
 
     with caplog.at_level(logging.INFO):
         f(1, "topsecret", b=3)
-    assert "secret" not in caplog.text
-    assert "Args: [1]" in caplog.text
-    assert "Kwargs: {'b': 3}" in caplog.text
+    assert "secret=discarded" in caplog.text
+    assert "Values: a=1 secret=discarded b=3" in caplog.text
 
 
 def test_param_attrs(caplog):
@@ -79,7 +77,7 @@ def test_param_attrs(caplog):
     with caplog.at_level(logging.INFO):
         send(data)
     assert "Attrs: {'payload': 6}" in caplog.text
-    assert "payload" not in caplog.text or "b'123456'" not in caplog.text
+    assert "payload=discarded" in caplog.text
 
 
 def test_param_attrs_transform_error(caplog):
@@ -102,8 +100,7 @@ def test_kwargs_and_args(caplog):
 
     with caplog.at_level(logging.INFO):
         f(1, 2, c=4)
-    assert "Args: [1, 2]" in caplog.text
-    assert "Kwargs: {'c': 4}" in caplog.text
+    assert "Values: a=1 b=2 c=4" in caplog.text
 
 
 def test_multiple_calls(caplog):
@@ -136,7 +133,7 @@ def test_discard_and_param_attrs_overlap(caplog):
     with caplog.at_level(logging.INFO):
         f("abcdef")
     assert "Attrs: {'token': 'abc'}" in caplog.text
-    assert "abcdef" not in caplog.text or "token" not in caplog.text
+    assert "token=discarded" in caplog.text
 
 
 def test_default_values(caplog):
@@ -146,8 +143,7 @@ def test_default_values(caplog):
 
     with caplog.at_level(logging.INFO):
         f(10)
-    assert "Args: [10]" in caplog.text
-    assert "Kwargs: {'b': 5}" in caplog.text or "Kwargs: {}" in caplog.text
+    assert "Values: a=10 b=5" in caplog.text
 
 
 def test_python310_utc(monkeypatch, caplog):
@@ -209,8 +205,7 @@ def test_extra_data_with_other_params(caplog):
 
     assert "Attrs: {'a': '10'}" in caplog.text
     assert "'secret'" not in caplog.text  # Checking if 'secret' value is logged
-    assert "Args: [10]" in caplog.text  # Make sure 'b' is not in Args
-    assert "Kwargs: {}" in caplog.text  # Make sure 'b' is not in Kwargs
+    assert "Values: a=10 b=discarded" in caplog.text  # b should show as discarded
     assert "Extra: {'user': 'test'}" in caplog.text
 
 
@@ -254,7 +249,7 @@ def test_log_conditions_none_logs_always(caplog):
     with caplog.at_level(logging.INFO):
         func(1)
     assert "Calling: " in caplog.text
-    assert "Args: [1]" in caplog.text
+    assert "Values: a=1" in caplog.text
 
 
 def test_log_conditions_empty_dict_logs_always(caplog):
@@ -265,7 +260,7 @@ def test_log_conditions_empty_dict_logs_always(caplog):
     with caplog.at_level(logging.INFO):
         func(1)
     assert "Calling: " in caplog.text
-    assert "Args: [1]" in caplog.text
+    assert "Values: a=1" in caplog.text
 
 
 def test_log_conditions_single_true_logs(caplog):
@@ -276,7 +271,7 @@ def test_log_conditions_single_true_logs(caplog):
     with caplog.at_level(logging.INFO):
         func(1)
     assert "Calling: " in caplog.text
-    assert "Args: [1]" in caplog.text
+    assert "Values: a=1" in caplog.text
 
 
 def test_log_conditions_single_false_no_log(caplog):
@@ -297,7 +292,7 @@ def test_log_conditions_multiple_true_logs(caplog):
     with caplog.at_level(logging.INFO):
         func(1, "hello")
     assert "Calling: " in caplog.text
-    assert "Args: [1, 'hello']" in caplog.text
+    assert "Values: a=1 b='hello'" in caplog.text
 
 
 def test_log_conditions_multiple_one_false_no_log(caplog):
@@ -328,8 +323,7 @@ def test_log_conditions_default_param_value_logs(caplog):
     with caplog.at_level(logging.INFO):
         func(1)  # b should be its default value 10
     assert "Calling: " in caplog.text
-    assert "Args: [1]" in caplog.text
-    assert "Kwargs: {'b': 10}" in caplog.text or "Kwargs: {}" in caplog.text
+    assert "Values: a=1 b=10" in caplog.text
 
 
 # Error Handling for log_conditions
@@ -377,7 +371,7 @@ def test_log_conditions_met_with_other_features(caplog):
     with caplog.at_level(logging.INFO):
         func(1, 123, "secret")
     assert "Calling: " in caplog.text
-    assert "Args: [1, 123]" in caplog.text  # c is discarded from direct args
+    assert "Values: a=1 b=123 c=discarded" in caplog.text  # c shows as discarded
     assert "Attrs: {'b': '123'}" in caplog.text
     assert "Extra: {'source': 'test'}" in caplog.text
     assert "secret" not in caplog.text
@@ -396,3 +390,17 @@ def test_log_conditions_not_met_with_other_features_no_log(caplog):
     with caplog.at_level(logging.INFO):
         func(1, 123, "secret")
     assert "Calling: " not in caplog.text
+
+
+def test_param_attrs_invalid_parameter():
+    """Test that param_attrs raises KeyError for invalid parameter names."""
+
+    @log_this(param_attrs={"nonexistent": str})
+    def func(a):
+        return a
+
+    with pytest.raises(KeyError) as exc_info:
+        func(1)
+
+    assert "Parameter 'nonexistent' referenced in param_attrs" in str(exc_info.value)
+    assert "is not a valid parameter for function 'func'" in str(exc_info.value)
