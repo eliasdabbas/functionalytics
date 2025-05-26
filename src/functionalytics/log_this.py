@@ -14,6 +14,7 @@ def log_this(
     discard_params: Optional[Iterable[str]] = None,
     extra_data: Optional[Mapping[str, Any]] = None,
     error_file_path: Optional[str] = None,
+    log_conditions: Optional[Mapping[str, Callable[[Any], bool]]] = None,
 ):
     """Flexibly log every invocation of your application's functions.
 
@@ -44,6 +45,15 @@ def log_this(
         line. Appears as ``Extra: {key1: val1, ...}``.
     error_file_path
         Path to a log file for errors. If *None*, error output goes to *stderr*.
+    log_conditions
+        Optional mapping of parameter names to boolean functions. Logging only
+        occurs if ALL conditions evaluate to True. Functions receive the parameter
+        value and should return a boolean. If *None*, logging always occurs.
+        If a key in this mapping does not correspond to a parameter of the
+        decorated function or is not available at call time, a `KeyError`
+        will be raised. If a condition function itself raises an exception
+        during its execution, a `RuntimeError` will be raised, encapsulating
+        the original exception.
 
     Examples
     --------
@@ -55,7 +65,13 @@ def log_this(
 
 
         add(1, 2)
-        # → Calling: __main__.add [2025-05-19T17:25:21.780733+00:00  2025-05-19T17:25:21.781115+00:00] Args: [10, 20] Kwargs: {} Attrs: {}
+        Calling: __main__.add [2025-05-19T17:25:21.780733+00:00  2025-05-19T17:25:21.781115+00:00] Args: [10, 20] Kwargs: {} Attrs: {}
+
+    **Conditional logging**::
+
+        @log_this(log_conditions={"value": lambda x: x > 0})
+        def process_value(value):
+            return value * 2
 
     **Redacting a secret token**::
 
@@ -64,11 +80,12 @@ def log_this(
 
     **Summarising large inputs**::
 
+    It's generally good to discard parameters that are large, so you don't clutter
+    your logs with huge objects. You can still log their attributes like length though.
+
         @log_this(param_attrs={"payload": len}, discard_params={"payload"})
-        # It's generally good to discard parameter that are large, so you don't clutter
-        # your logs with huge objects. You can still log their attributes like length,
-        # though.
-        def send(payload: bytes): ...
+        def send(payload: bytes):
+            ...
 
     See Also
     --------
@@ -142,7 +159,9 @@ def log_this(
                 result = func(*args, **kwargs)
             except Exception as exc:
                 error_logger.error(
-                    f"Error in {logger_name} at {t0.isoformat()} Args: {args_repr} Kwargs: {kwargs_repr} Attrs: {attrs_repr} Exception: {exc}\n{traceback.format_exc()}"
+                    f"Error in {logger_name} at {t0.isoformat()} "
+                    f"Args: {args_repr} Kwargs: {kwargs_repr} "
+                    f"Attrs: {attrs_repr} Exception: {exc}\n{traceback.format_exc()}"
                 )
                 raise
             t1 = datetime.datetime.now(utc)
@@ -150,15 +169,32 @@ def log_this(
             extra_data_repr = ""
             if extra_data:
                 extra_data_repr = f" Extra: {extra_data}"
+            log_conditions_met = True
+            if log_conditions is not None:
+                try:
+                    log_conditions_met = all(
+                        v(bound.arguments[k]) for k, v in log_conditions.items()
+                    )
+                except KeyError as e:
+                    raise KeyError(
+                        f"Parameter {str(e)} referenced in log_conditions "
+                        f"is not a valid parameter for function '{func.__name__}' or not available at call time."
+                    ) from e
+                except Exception as e:
 
-            logger.log(
-                log_level,
-                (
-                    f"Calling: {logger_name} "
-                    f"[{t0.isoformat()}  {t1.isoformat()}] "
-                    f"Args: {args_repr} Kwargs: {kwargs_repr} Attrs: {attrs_repr}{extra_data_repr}"
-                ),
-            )
+                    raise RuntimeError(
+                        f"Error evaluating a condition function within log_conditions "
+                        f"for function '{func.__name__}': {e}"
+                    ) from e
+            if log_conditions_met:
+                logger.log(
+                    log_level,
+                    (
+                        f"Calling: {logger_name} "
+                        f"[{t0.isoformat()}  {t1.isoformat()}] "
+                        f"Args: {args_repr} Kwargs: {kwargs_repr} Attrs: {attrs_repr}{extra_data_repr}"
+                    ),
+                )
             return result
 
         return wrapper
