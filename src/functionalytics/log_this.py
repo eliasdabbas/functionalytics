@@ -65,7 +65,7 @@ def log_this(
 
 
         add(1, 2)
-        Calling: __main__.add [2025-05-19T17:25:21.780733+00:00  2025-05-19T17:25:21.781115+00:00] Args: [10, 20] Kwargs: {} Attrs: {}
+        Calling: __main__.add [2025-05-19T17:25:21.780733+00:00  2025-05-19T17:25:21.781115+00:00] Values: a=1 b=2 Attrs: {}
 
     **Conditional logging**::
 
@@ -130,21 +130,25 @@ def log_this(
             bound = sig.bind_partial(*args, **kwargs)
             bound.apply_defaults()
 
-            positional_param_names = list(sig.parameters)[: len(args)]
-            args_repr = [
-                value
-                for name, value in zip(positional_param_names, args)
-                if name not in discard_set
-            ]
-            kwargs_repr = {k: v for k, v in kwargs.items() if k not in discard_set}
+            values_parts = []
+            for name, value in bound.arguments.items():
+                if name in discard_set:
+                    values_parts.append(f"{name}=discarded")
+                else:
+                    values_parts.append(f"{name}={repr(value)}")
+            values_repr = " ".join(values_parts)
 
             attrs_repr = {}
             if param_attrs:
                 for name, transformer in param_attrs.items():
-                    if name not in bound.arguments:
-                        continue
                     try:
                         attrs_repr[name] = transformer(bound.arguments[name])
+                    except KeyError as e:
+                        raise KeyError(
+                            f"Parameter {str(e)} referenced in param_attrs "
+                            f"is not a valid parameter for function '{func.__name__}' "
+                            f"or not available at call time."
+                        ) from e
                     except Exception as exc:
                         attrs_repr[name] = f"<transform error: {exc}>"
 
@@ -160,7 +164,7 @@ def log_this(
             except Exception as exc:
                 error_logger.error(
                     f"Error in {logger_name} at {t0.isoformat()} "
-                    f"Args: {args_repr} Kwargs: {kwargs_repr} "
+                    f"Values: {values_repr} "
                     f"Attrs: {attrs_repr} Exception: {exc}\n{traceback.format_exc()}"
                 )
                 raise
@@ -178,10 +182,10 @@ def log_this(
                 except KeyError as e:
                     raise KeyError(
                         f"Parameter {str(e)} referenced in log_conditions "
-                        f"is not a valid parameter for function '{func.__name__}' or not available at call time."
+                        f"is not a valid parameter for function '{func.__name__}' "
+                        f"or not available at call time."
                     ) from e
                 except Exception as e:
-
                     raise RuntimeError(
                         f"Error evaluating a condition function within log_conditions "
                         f"for function '{func.__name__}': {e}"
@@ -192,7 +196,8 @@ def log_this(
                     (
                         f"Calling: {logger_name} "
                         f"[{t0.isoformat()}  {t1.isoformat()}] "
-                        f"Args: {args_repr} Kwargs: {kwargs_repr} Attrs: {attrs_repr}{extra_data_repr}"
+                        f"Values: {values_repr} "
+                        f"Attrs: {attrs_repr}{extra_data_repr}"
                     ),
                 )
             return result
