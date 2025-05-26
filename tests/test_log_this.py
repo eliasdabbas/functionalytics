@@ -241,3 +241,158 @@ def test_error_logging_to_stderr(caplog):
     assert "Error in" in caplog.text
     assert "bad: oops" in caplog.text
     assert "Exception:" in caplog.text
+
+
+# Tests for log_conditions
+
+
+def test_log_conditions_none_logs_always(caplog):
+    @log_this(log_conditions=None)
+    def func(a):
+        return a
+
+    with caplog.at_level(logging.INFO):
+        func(1)
+    assert "Calling: " in caplog.text
+    assert "Args: [1]" in caplog.text
+
+
+def test_log_conditions_empty_dict_logs_always(caplog):
+    @log_this(log_conditions={})
+    def func(a):
+        return a
+
+    with caplog.at_level(logging.INFO):
+        func(1)
+    assert "Calling: " in caplog.text
+    assert "Args: [1]" in caplog.text
+
+
+def test_log_conditions_single_true_logs(caplog):
+    @log_this(log_conditions={"a": lambda x: x > 0})
+    def func(a):
+        return a
+
+    with caplog.at_level(logging.INFO):
+        func(1)
+    assert "Calling: " in caplog.text
+    assert "Args: [1]" in caplog.text
+
+
+def test_log_conditions_single_false_no_log(caplog):
+    @log_this(log_conditions={"a": lambda x: x < 0})
+    def func(a):
+        return a
+
+    with caplog.at_level(logging.INFO):
+        func(1)
+    assert "Calling: " not in caplog.text
+
+
+def test_log_conditions_multiple_true_logs(caplog):
+    @log_this(log_conditions={"a": lambda x: x > 0, "b": lambda x: isinstance(x, str)})
+    def func(a, b):
+        return a, b
+
+    with caplog.at_level(logging.INFO):
+        func(1, "hello")
+    assert "Calling: " in caplog.text
+    assert "Args: [1, 'hello']" in caplog.text
+
+
+def test_log_conditions_multiple_one_false_no_log(caplog):
+    @log_this(log_conditions={"a": lambda x: x < 0, "b": lambda x: isinstance(x, str)})
+    def func(a, b):
+        return a, b
+
+    with caplog.at_level(logging.INFO):
+        func(1, "hello")  # a < 0 is False
+    assert "Calling: " not in caplog.text
+
+
+def test_log_conditions_multiple_all_false_no_log(caplog):
+    @log_this(log_conditions={"a": lambda x: x < 0, "b": lambda x: isinstance(x, int)})
+    def func(a, b):
+        return a, b
+
+    with caplog.at_level(logging.INFO):
+        func(1, "hello")  # both False
+    assert "Calling: " not in caplog.text
+
+
+def test_log_conditions_default_param_value_logs(caplog):
+    @log_this(log_conditions={"b": lambda x: x == 10})
+    def func(a, b=10):
+        return a + b
+
+    with caplog.at_level(logging.INFO):
+        func(1)  # b should be its default value 10
+    assert "Calling: " in caplog.text
+    assert "Args: [1]" in caplog.text
+    assert "Kwargs: {'b': 10}" in caplog.text or "Kwargs: {}" in caplog.text
+
+
+# Error Handling for log_conditions
+def test_log_conditions_raises_key_error_for_invalid_param():
+    @log_this(log_conditions={"non_existent": lambda x: True})
+    def func(a):
+        return a
+
+    with pytest.raises(KeyError) as excinfo:
+        func(1)
+    assert "Parameter 'non_existent' referenced in log_conditions" in str(excinfo.value)
+    assert "is not a valid parameter for function 'func'" in str(excinfo.value)
+
+
+def test_log_conditions_raises_runtime_error_for_condition_exception():
+    def failing_condition(x):
+        raise ValueError("Condition failed!")
+
+    @log_this(log_conditions={"a": failing_condition})
+    def func(a):
+        return a
+
+    with pytest.raises(RuntimeError) as excinfo:
+        func(1)
+    assert "Error evaluating a condition function within log_conditions" in str(
+        excinfo.value
+    )
+    assert "Condition failed!" in str(
+        excinfo.value
+    )  # Check original error message is present
+    assert isinstance(excinfo.value.__cause__, ValueError)
+
+
+# Interaction with Other Decorator Features
+def test_log_conditions_met_with_other_features(caplog):
+    @log_this(
+        log_conditions={"a": lambda x: x > 0},
+        param_attrs={"b": str},
+        discard_params={"c"},
+        extra_data={"source": "test"},
+    )
+    def func(a, b, c):
+        return a, b, c
+
+    with caplog.at_level(logging.INFO):
+        func(1, 123, "secret")
+    assert "Calling: " in caplog.text
+    assert "Args: [1, 123]" in caplog.text  # c is discarded from direct args
+    assert "Attrs: {'b': '123'}" in caplog.text
+    assert "Extra: {'source': 'test'}" in caplog.text
+    assert "secret" not in caplog.text
+
+
+def test_log_conditions_not_met_with_other_features_no_log(caplog):
+    @log_this(
+        log_conditions={"a": lambda x: x < 0},  # This will be False
+        param_attrs={"b": str},
+        discard_params={"c"},
+        extra_data={"source": "test"},
+    )
+    def func(a, b, c):
+        return a, b, c
+
+    with caplog.at_level(logging.INFO):
+        func(1, 123, "secret")
+    assert "Calling: " not in caplog.text
