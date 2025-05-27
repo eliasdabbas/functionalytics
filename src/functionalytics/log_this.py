@@ -122,6 +122,7 @@ def log_this(
         error_logger_name = f"{func.__module__}.{func.__qualname__}.error"
         error_logger = logging.getLogger(error_logger_name)
         error_logger.setLevel(logging.ERROR)
+        error_logger.propagate = False  # Prevent propagation to parent logger
         if error_handler not in error_logger.handlers:
             error_logger.addHandler(error_handler)
 
