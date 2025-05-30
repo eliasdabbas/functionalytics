@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-05-30
+
+### Added
+- Callable support for `extra_data` parameter in `log_this` decorator
+- Functions can now be passed to `extra_data` which are executed at runtime to provide dynamic context data
+- Graceful error handling for callable `extra_data` - exceptions are caught and logged as `<extra_data_error>` entries
+- Comprehensive test coverage for callable `extra_data` functionality including edge cases
+
+
 ## [0.5.1] - 2025-05-26
 
 ### Fixed
