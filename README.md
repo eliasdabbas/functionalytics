@@ -72,5 +72,18 @@ python3 -m pip install functionalytics
 - `discard_params`: Typically, when you have certain inputs that might clutter log files (or might be private), and that you want to log certain attributes, you will also need to discard those inputs from being logged. This is the option for doing so.
 - `extra_data`: Allows for logging arbitrary additional data. This should be a dictionary where keys are strings (descriptions of the data) and values are the actual data to be logged. This gives developers the flexibility to include any custom information relevant to their needs.
 - `error_file_path`: Just like `file_path` this optional file is where errors get logged, together with the full traceback.
+- `log_conditions`: You don't always want to log a function call. Sometimes a function would be called with default values which the user didn't initiate, or maybe the default is an empty value, and you don't want to pollute the logs with those. For this parameter you supply a dictionary with the condition(s):
+
+```python
+log_conditions = {
+    "param_a": lambda a: a is not None,
+    "param_b": lambda b: b > 10,
+    "param_c": lambda c: c in ["blue", "green", "organe"],
+}
+
+log_this(log_conditions=log_conditions)
+```
+
+The logging in this case would only occur if `param_a` is not `None` AND `param_b` is greater than 10, AND `param_c` is one of  `["blue", "green", "organe"]`. Maybe you're only interested in analyzing `param_b` inputs that are big enough so you can audit/analyze those, because you know that it's performing well on values less than 10. You also only want to check what happens only for the colors of interest which you can supply as shown above.
 
 
