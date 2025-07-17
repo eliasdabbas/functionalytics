@@ -1,6 +1,6 @@
 # `functionalytics`: Effortless Analytics for Your Python Functions
 
-> ⚠️ This package is still under heavy development. Expect changes, and feel free to submit suggestions.
+> ⚠️ This package is under development, and semi-stable. Expect some changes but not major ones, and feel free to submit any suggestions or bugs.
 
 functionalytics helps you understand how your users interact with your application, without extra code or complex analytics tools. Just add a decorator to your functions, and log every call, argument, and key attribute for later analysis.
 
@@ -85,5 +85,3 @@ log_this(log_conditions=log_conditions)
 ```
 
 The logging in this case would only occur if `param_a` is not `None` AND `param_b` is greater than 10, AND `param_c` is one of  `["blue", "green", "organe"]`. Maybe you're only interested in analyzing `param_b` inputs that are big enough so you can audit/analyze those, because you know that it's performing well on values less than 10. You also only want to check what happens only for the colors of interest which you can supply as shown above.
-
-
