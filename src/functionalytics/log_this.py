@@ -180,8 +180,8 @@ def log_this(
                 # Handle both static extra_data (dict) and dynamic extra_data (callable)
                 if callable(extra_data):
                     try:
-                        result = extra_data()
-                        resolved_extra_data = result if result is not None else {}
+                        extra_result = extra_data()
+                        resolved_extra_data = extra_result if extra_result is not None else {}
                     except Exception as exc:
                         resolved_extra_data = {"<extra_data_error>": str(exc)}
                 else:
