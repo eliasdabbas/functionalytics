@@ -665,3 +665,29 @@ def test_extra_data_callable_returns_none(caplog):
         func(1)
     # None returned by callable should be logged as "Extra: None"
     assert "Extra: {}" in caplog.text
+
+
+def test_extra_data_callable_preserves_function_return_value(caplog):
+    """Test that callable extra_data doesn't overwrite the original function's return value."""
+    
+    def get_extra_data():
+        return {1: "one", 2: "two"}
+    
+    @log_this(extra_data=get_extra_data)
+    def func_returning_list(x):
+        return [1, 2, 3, x]
+    
+    @log_this(extra_data=get_extra_data)
+    def func_returning_dict(x):
+        return {"original": x, "processed": x * 2}
+    
+    with caplog.at_level(logging.INFO):
+        result_list = func_returning_list(4)
+        result_dict = func_returning_dict(5)
+    
+    # Verify the original function's return values are preserved
+    assert result_list == [1, 2, 3, 4]
+    assert result_dict == {"original": 5, "processed": 10}
+    
+    # Verify extra_data is still logged correctly
+    assert "Extra: {1: 'one', 2: 'two'}" in caplog.text
