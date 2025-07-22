@@ -1,6 +1,6 @@
 [project]
 name = "functionalytics"
-version = "0.6.1a"
+version = "0.6.1a1"
 description = "Function(ality) analytics for your apps."
 readme = "README.md"
 authors = [
