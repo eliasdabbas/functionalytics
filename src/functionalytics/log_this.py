@@ -69,7 +69,7 @@ def log_this(
 
 
         add(1, 2)
-        Calling: __main__.add [2025-05-19T17:25:21.780733+00:00  2025-05-19T17:25:21.781115+00:00] Values: a=1 b=2 Attrs: {}
+        Calling: __main__.add [2025-05-19T17:25:21.780733+00:00  2025-05-19T17:25:21.781115+00:00] Values: {'a': 1, 'b': 2} Attrs: {} Extra: {}
 
     **Conditional logging**::
 
@@ -135,13 +135,12 @@ def log_this(
             bound = sig.bind_partial(*args, **kwargs)
             bound.apply_defaults()
 
-            values_parts = []
+            values_dict = {}
             for name, value in bound.arguments.items():
                 if name in discard_set:
-                    values_parts.append(f"{name}=discarded")
+                    values_dict[name] = "discarded"
                 else:
-                    values_parts.append(f"{name}={repr(value)}")
-            values_repr = " ".join(values_parts)
+                    values_dict[name] = value
 
             attrs_repr = {}
             if param_attrs:
@@ -169,23 +168,24 @@ def log_this(
             except Exception as exc:
                 error_logger.error(
                     f"Error in {logger_name} at {t0.isoformat()} "
-                    f"Values: {values_repr} "
-                    f"Attrs: {attrs_repr} Exception: {exc}\n{traceback.format_exc()}"
+                    f"Values: {repr(values_dict)} "
+                    f"Attrs: {repr(attrs_repr)} Exception: {exc}\n{traceback.format_exc()}"
                 )
                 raise
             t1 = datetime.datetime.now(utc)
 
-            extra_data_repr = ""
+            # Initialize with empty dict, then populate if extra_data exists
+            resolved_extra_data = {}
             if extra_data:
                 # Handle both static extra_data (dict) and dynamic extra_data (callable)
                 if callable(extra_data):
                     try:
-                        resolved_extra_data = extra_data()
+                        result = extra_data()
+                        resolved_extra_data = result if result is not None else {}
                     except Exception as exc:
                         resolved_extra_data = {"<extra_data_error>": str(exc)}
                 else:
-                    resolved_extra_data = extra_data
-                extra_data_repr = f" Extra: {resolved_extra_data}"
+                    resolved_extra_data = extra_data if extra_data is not None else {}
             log_conditions_met = True
             if log_conditions is not None:
                 try:
@@ -209,8 +209,9 @@ def log_this(
                     (
                         f"Calling: {logger_name} "
                         f"[{t0.isoformat()}  {t1.isoformat()}] "
-                        f"Values: {values_repr} "
-                        f"Attrs: {attrs_repr}{extra_data_repr}"
+                        f"Values: {repr(values_dict)} "
+                        f"Attrs: {repr(attrs_repr)} "
+                        f"Extra: {repr(resolved_extra_data)}"
                     ),
                 )
             return result
