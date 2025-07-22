@@ -54,8 +54,8 @@ Every time the `add` function gets called, the given arguments are logged so you
 
 - Start/end time, which helps audit how fast/slow that particular function is, and if certain inputs cause it to slow down.
 - Module name: Where the function is being called from.
-- Args, Kwargs: Dependig on how they are called, all arguments get logged.
-- Attrs: In some cases you don't want to log the actual arguments. They might be uploaded images, CSV files, extremely long strings, or anything that would unnecessarily clutter your log files. In such cases, you can only log certain attribtes of those inputs. For example image size, CSV file dimensions, or string lengths, respectively.
+- Values: Get the actuall arguments supplied to your functions (whether default or explicit).
+- Attrs: In some cases you don't want to log the actual arguments. They might be uploaded images, CSV files, sensitive/private data, extremely long strings, or anything that would unnecessarily clutter your log files. In such cases, you can only log certain attribtes of those inputs. For example image size, CSV file dimensions, or string lengths, respectively.
 
 ## Installation
 
